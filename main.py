@@ -1,4 +1,5 @@
 from google import genai
+from google.genai import types
 from dotenv import load_dotenv
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
@@ -120,7 +121,7 @@ vector_db = QdrantVectorStore.from_existing_collection(
 )
 
 while True:
-    Ask = input("\n\033[96mType Here: ")
+    Ask = input("\n\033[96mType Here: \033[0m")
     if Ask.strip().lower() in {"exit", "quit", "q"}:
         print("Goodbye")
         break
@@ -129,15 +130,19 @@ while True:
     context = "\n\n\n".join([f"Page Content: {res.page_content}\nPage Number: {res.metadata['page_label']}"
     for res in vector_result])
 
-    response = ai.models.generate_content(
+    response = ai.models.generate_content_stream(
         model = "gemini-3-flash-preview",
         contents = f"""
             context: {context}
 
             user question: {Ask}
         """,
-        config = {
-            "system_instruction": system_prompt
-        }
+        config = types.GenerateContentConfig(
+            system_instruction = system_prompt
+        )
     )
-    print(response.text)
+    
+    print("\n\033[92mRAGNAR:\033[0m")
+    for chunk in response:
+        print(chunk.text, end="", flush=True)
+    print("\n")
