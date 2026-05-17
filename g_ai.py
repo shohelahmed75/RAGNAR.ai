@@ -39,7 +39,7 @@ def g_ragnar():
 
         while True:
             response = ai.models.generate_content_stream(
-                model = "gemini-3-flash-preview",
+                model = "gemini-2.5-pro",
                 contents = message_history,
                 config = types.GenerateContentConfig(
                     system_instruction = SYSTEM_PROMPT
