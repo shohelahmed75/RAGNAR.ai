@@ -1,23 +1,49 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import './index.css';
+import { useAuth } from './context/AuthContext';
+import AuthPage from './pages/AuthPage';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
 
-function App() {
+interface UserFile {
+  id: number;
+  filename: string;
+  collection_name: string;
+}
+
+const Dashboard: React.FC = () => {
+  const { user, logout } = useAuth();
+  
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Hail, traveler! I am RAGNAR. Upload your scrolls (PDFs) and ask of me what you will.' }
+    { role: 'assistant', content: `Hail, ${user?.username}! I am RAGNAR. Upload your scrolls or select an existing one to begin.` }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<{type: 'success'|'error'|'info', text: string} | null>(null);
-  const [collectionName, setCollectionName] = useState<string>('');
+  
+  const [userFiles, setUserFiles] = useState<UserFile[]>([]);
+  const [activeCollection, setActiveCollection] = useState<string>('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const fetchFiles = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/files');
+      setUserFiles(response.data);
+    } catch (e) {
+      console.error("Failed to fetch files");
+    }
+  };
+
+  useEffect(() => {
+    fetchFiles();
+  }, []);
 
   // Auto-scroll chat
   useEffect(() => {
@@ -44,10 +70,11 @@ function App() {
       if (response.data.error) {
         setUploadStatus({ type: 'error', text: response.data.error });
       } else {
-        setUploadStatus({ type: 'success', text: `Knowledge absorbed! (${response.data.collection_name})` });
+        setUploadStatus({ type: 'success', text: `Knowledge absorbed! (${response.data.filename})` });
         if (response.data.collection_name) {
-          setCollectionName(response.data.collection_name);
+          setActiveCollection(response.data.collection_name);
         }
+        fetchFiles(); // Refresh list
       }
     } catch (error) {
       setUploadStatus({ type: 'error', text: 'Failed to upload document.' });
@@ -62,20 +89,21 @@ function App() {
     e.preventDefault();
     const files = e.dataTransfer.files;
     if (files.length && fileInputRef.current) {
-      // Use DataTransfer to set files to the input element
       const dataTransfer = new DataTransfer();
       dataTransfer.items.add(files[0]);
       fileInputRef.current.files = dataTransfer.files;
-      // Trigger onChange manually
       const event = new Event('change', { bubbles: true });
       fileInputRef.current.dispatchEvent(event);
-      // Let's call the function directly since dispatchEvent doesn't trigger React's synthetic event
       handleFileUpload({ target: { files: dataTransfer.files } } as any);
     }
   };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
+    if (!activeCollection) {
+      setMessages([...messages, { role: 'assistant', content: 'You must select or upload a scroll first before asking questions.' }]);
+      return;
+    }
 
     const userMessage: Message = { role: 'user', content: input };
     const newMessages = [...messages, userMessage];
@@ -84,18 +112,13 @@ function App() {
     setIsTyping(true);
 
     try {
-      // Exclude the initial greeting from history if you want, but sending it is fine
-      // Exclude system message and only send user/assistant history to the backend
       const history = newMessages.slice(1, -1).map(m => ({ role: m.role, content: m.content }));
       
       const payload: any = {
         query: userMessage.content,
-        history: history
+        history: history,
+        collection_name: activeCollection
       };
-      
-      if (collectionName) {
-        payload.collection_name = collectionName;
-      }
       
       const response = await axios.post('http://localhost:8000/chat', payload);
 
@@ -104,8 +127,12 @@ function App() {
       } else {
         setMessages([...newMessages, { role: 'assistant', content: response.data.response }]);
       }
-    } catch (error) {
-      setMessages([...newMessages, { role: 'assistant', content: 'Alas! The connection to the gods was lost.' }]);
+    } catch (error: any) {
+      if (error.response?.status === 403) {
+         setMessages([...newMessages, { role: 'assistant', content: 'You are not authorized to query this collection.' }]);
+      } else {
+         setMessages([...newMessages, { role: 'assistant', content: 'Alas! The connection to the gods was lost.' }]);
+      }
     } finally {
       setIsTyping(false);
     }
@@ -117,7 +144,6 @@ function App() {
     }
   };
 
-  // Simple Markdown parser for bold and line breaks
   const renderMarkdown = (text: string) => {
     const html = text
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -127,30 +153,31 @@ function App() {
 
   return (
     <div className="app-container">
-      <header className="header">
-        <h1>RAGNAR</h1>
-        <p>Document Intelligence Engine</p>
+      <header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ textAlign: 'left' }}>
+          <h1>RAGNAR</h1>
+          <p>Document Intelligence Engine</p>
+        </div>
+        <div>
+          <span style={{ marginRight: '1rem', color: 'var(--accent-color)' }}>Logged in as {user?.username}</span>
+          <button onClick={logout} className="upload-btn" style={{ padding: '0.3rem 0.8rem' }}>Logout</button>
+        </div>
       </header>
 
       <main className="main-content">
-        {/* Sidebar / Upload Area */}
         <aside className="sidebar">
-          <div className="glass-panel">
+          <div className="glass-panel" style={{ flex: '0 0 auto' }}>
             <h2 style={{ marginBottom: '1rem', fontSize: '1.2rem', color: 'var(--text-bright)' }}>
-              Provide Context
+              Upload New Scroll
             </h2>
             <div 
               className="upload-section"
               onDragOver={handleDragOver}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
+              style={{ padding: '1.5rem 1rem' }}
             >
-              <div className="upload-icon">
-                {/* SVG Icon for Upload */}
-                <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-              </div>
-              <p>Drag & Drop your PDF here</p>
-              <p style={{ fontSize: '0.8rem', color: 'var(--accent-dim)', marginTop: '0.5rem' }}>or click to browse</p>
+              <p>Drag & Drop PDF or click</p>
               <input 
                 type="file" 
                 ref={fileInputRef} 
@@ -159,29 +186,48 @@ function App() {
                 accept="application/pdf"
               />
             </div>
-
             {uploadStatus && (
               <div className={`status-message status-${uploadStatus.type === 'info' ? 'success' : uploadStatus.type}`} style={{ opacity: uploadStatus.type === 'info' ? 0.8 : 1 }}>
                 {uploadStatus.text}
               </div>
             )}
+          </div>
 
-            <div style={{ marginTop: '2rem' }}>
-              <h3 style={{ fontSize: '1rem', color: 'var(--accent-dim)', marginBottom: '0.5rem' }}>System Status</h3>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2ecc71', display: 'inline-block' }}></span>
-                API Connected
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', marginTop: '4px' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2ecc71', display: 'inline-block' }}></span>
-                Vector DB Ready
-              </div>
-            </div>
+          <div className="glass-panel" style={{ flex: 1, overflowY: 'auto' }}>
+            <h2 style={{ marginBottom: '1rem', fontSize: '1.2rem', color: 'var(--text-bright)' }}>
+              Your Scrolls
+            </h2>
+            {userFiles.length === 0 ? (
+              <p style={{ color: 'var(--accent-dim)', fontSize: '0.9rem' }}>No scrolls uploaded yet.</p>
+            ) : (
+              <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {userFiles.map(f => (
+                  <li 
+                    key={f.id} 
+                    onClick={() => setActiveCollection(f.collection_name)}
+                    style={{
+                      padding: '0.8rem',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      background: activeCollection === f.collection_name ? 'var(--chat-user-bg)' : 'rgba(0,0,0,0.2)',
+                      border: `1px solid ${activeCollection === f.collection_name ? 'var(--accent-color)' : 'var(--glass-border)'}`,
+                      transition: 'all 0.2s',
+                      wordBreak: 'break-all'
+                    }}
+                  >
+                    {f.filename}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </aside>
 
-        {/* Chat Area */}
         <section className="chat-container glass-panel">
+          <div style={{ padding: '0.5rem', marginBottom: '1rem', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', textAlign: 'center', color: 'var(--accent-dim)', fontSize: '0.9rem' }}>
+            {activeCollection ? `Active Context: ${userFiles.find(f => f.collection_name === activeCollection)?.filename || activeCollection}` : 'Select a scroll to begin asking questions.'}
+          </div>
+          
           <div className="chat-history">
             {messages.map((msg, idx) => (
               <div key={idx} className={`chat-bubble ${msg.role === 'user' ? 'chat-user' : 'chat-assistant'}`}>
@@ -202,16 +248,16 @@ function App() {
             <input 
               type="text" 
               className="chat-input" 
-              placeholder="Ask RAGNAR a question..."
+              placeholder={activeCollection ? "Ask RAGNAR a question..." : "Select a scroll first..."}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              disabled={isTyping}
+              disabled={isTyping || !activeCollection}
             />
             <button 
               className="send-btn" 
               onClick={sendMessage}
-              disabled={!input.trim() || isTyping}
+              disabled={!input.trim() || isTyping || !activeCollection}
             >
               <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" height="1.2em" width="1.2em" xmlns="http://www.w3.org/2000/svg"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             </button>
@@ -219,6 +265,27 @@ function App() {
         </section>
       </main>
     </div>
+  );
+};
+
+const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuth();
+  return user ? <>{children}</> : <Navigate to="/login" />;
+};
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<AuthPage />} />
+      <Route 
+        path="/" 
+        element={
+          <PrivateRoute>
+            <Dashboard />
+          </PrivateRoute>
+        } 
+      />
+    </Routes>
   );
 }
 
