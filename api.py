@@ -63,6 +63,27 @@ def get_files(current_user: User = Depends(get_current_user), db: Session = Depe
     files = db.query(Document).filter(Document.user_id == current_user.id).all()
     return [{"id": f.id, "filename": f.filename, "collection_name": f.collection_name, "created_at": f.created_at} for f in files]
 
+@app.delete("/files/{file_id}")
+def delete_file(file_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    try:
+        doc = db.query(Document).filter(Document.id == file_id, Document.user_id == current_user.id).first()
+        if not doc:
+            raise HTTPException(status_code=404, detail="File not found or not authorized")
+        
+        from qdrant_client import QdrantClient
+        try:
+            client = QdrantClient(url="http://localhost:6333")
+            client.delete_collection(collection_name=doc.collection_name)
+        except Exception:
+            pass
+
+        db.delete(doc)
+        db.commit()
+
+        return {"message": "File deleted successfully"}
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.post("/upload")
 async def upload_pdf(file: UploadFile = File(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:

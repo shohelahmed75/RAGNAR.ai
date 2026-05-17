@@ -32,12 +32,28 @@ const Dashboard: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   const fetchFiles = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/files');
+      const response = await axios.get(`http://${window.location.hostname}:8000/files`);
       setUserFiles(response.data);
     } catch (e) {
       console.error("Failed to fetch files");
+    }
+  };
+
+  const handleDelete = async (fileId: number, collectionName: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // prevent clicking the list item
+    try {
+      await axios.delete(`http://${window.location.hostname}:8000/files/${fileId}`);
+      if (activeCollection === collectionName) {
+        setActiveCollection('');
+        setMessages([{ role: 'assistant', content: 'Context cleared. Please select another scroll.' }]);
+      }
+      fetchFiles();
+    } catch (error) {
+      console.error("Failed to delete file");
     }
   };
 
@@ -64,7 +80,7 @@ const Dashboard: React.FC = () => {
     setUploadStatus({ type: 'info', text: 'Forging knowledge from your scroll... Please wait.' });
     
     try {
-      const response = await axios.post('http://localhost:8000/upload', formData, {
+      const response = await axios.post(`http://${window.location.hostname}:8000/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       if (response.data.error) {
@@ -75,6 +91,7 @@ const Dashboard: React.FC = () => {
           setActiveCollection(response.data.collection_name);
         }
         fetchFiles(); // Refresh list
+        setIsSidebarOpen(false); // Close sidebar on mobile after upload
       }
     } catch (error) {
       setUploadStatus({ type: 'error', text: 'Failed to upload document.' });
@@ -120,7 +137,7 @@ const Dashboard: React.FC = () => {
         collection_name: activeCollection
       };
       
-      const response = await axios.post('http://localhost:8000/chat', payload);
+      const response = await axios.post(`http://${window.location.hostname}:8000/chat`, payload);
 
       if (response.data.error) {
         setMessages([...newMessages, { role: 'assistant', content: `Error: ${response.data.error}` }]);
@@ -154,18 +171,23 @@ const Dashboard: React.FC = () => {
   return (
     <div className="app-container">
       <header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ textAlign: 'left' }}>
-          <h1>RAGNAR</h1>
-          <p>Document Intelligence Engine</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button className="mobile-menu-btn" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+            ☰
+          </button>
+          <div style={{ textAlign: 'left' }}>
+            <h1>RAGNAR</h1>
+            <p className="subtitle">Document Intelligence Engine</p>
+          </div>
         </div>
-        <div>
-          <span style={{ marginRight: '1rem', color: 'var(--accent-color)' }}>Logged in as {user?.username}</span>
-          <button onClick={logout} className="upload-btn" style={{ padding: '0.3rem 0.8rem' }}>Logout</button>
+        <div className="header-right">
+          <span className="logged-in-text" style={{ marginRight: '1rem', color: 'var(--accent-color)' }}>Logged in as {user?.username}</span>
+          <button onClick={logout} className="upload-btn logout-btn" style={{ padding: '0.3rem 0.8rem', marginTop: 0 }}>Logout</button>
         </div>
       </header>
 
       <main className="main-content">
-        <aside className="sidebar">
+        <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
           <div className="glass-panel" style={{ flex: '0 0 auto' }}>
             <h2 style={{ marginBottom: '1rem', fontSize: '1.2rem', color: 'var(--text-bright)' }}>
               Upload New Scroll
@@ -212,10 +234,21 @@ const Dashboard: React.FC = () => {
                       background: activeCollection === f.collection_name ? 'var(--chat-user-bg)' : 'rgba(0,0,0,0.2)',
                       border: `1px solid ${activeCollection === f.collection_name ? 'var(--accent-color)' : 'var(--glass-border)'}`,
                       transition: 'all 0.2s',
-                      wordBreak: 'break-all'
+                      wordBreak: 'break-all',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '0.5rem'
                     }}
                   >
-                    {f.filename}
+                    <span>{f.filename}</span>
+                    <button 
+                      className="delete-btn" 
+                      onClick={(e) => handleDelete(f.id, f.collection_name, e)}
+                      title="Delete Scroll"
+                    >
+                      ✕
+                    </button>
                   </li>
                 ))}
               </ul>

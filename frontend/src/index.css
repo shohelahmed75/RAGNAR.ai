@@ -7,7 +7,7 @@
   --text-bright: #ffffff;
   --chat-user-bg: rgba(102, 252, 241, 0.1);
   --chat-bot-bg: rgba(31, 40, 51, 0.7);
-  --glass-bg: rgba(31, 40, 51, 0.4);
+  --glass-bg: rgba(45, 45, 45, 0.4);
   --glass-border: rgba(102, 252, 241, 0.15);
 }
 
@@ -20,7 +20,7 @@
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--primary-bg);
-  background-image: 
+  background-image:
     radial-gradient(circle at 15% 50%, rgba(69, 162, 158, 0.15) 0%, transparent 50%),
     radial-gradient(circle at 85% 30%, rgba(102, 252, 241, 0.1) 0%, transparent 50%);
   color: var(--text-main);
@@ -122,7 +122,8 @@ body {
   text-align: center;
 }
 
-.upload-section:hover, .upload-section.drag-active {
+.upload-section:hover,
+.upload-section.drag-active {
   border-color: var(--accent-color);
   background: rgba(102, 252, 241, 0.05);
 }
@@ -201,13 +202,16 @@ body {
 .chat-history::-webkit-scrollbar {
   width: 6px;
 }
+
 .chat-history::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.1);
 }
+
 .chat-history::-webkit-scrollbar-thumb {
   background: var(--glass-border);
   border-radius: 10px;
 }
+
 .chat-history::-webkit-scrollbar-thumb:hover {
   background: var(--accent-dim);
 }
@@ -222,8 +226,15 @@ body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .chat-user {
@@ -306,23 +317,39 @@ body {
   animation: bounce 1.4s infinite ease-in-out both;
 }
 
-.dot:nth-child(1) { animation-delay: -0.32s; }
-.dot:nth-child(2) { animation-delay: -0.16s; }
+.dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
 
 @keyframes bounce {
-  0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1); }
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+
+  40% {
+    transform: scale(1);
+  }
 }
 
 .markdown p {
   margin-bottom: 0.5rem;
 }
+
 .markdown p:last-child {
   margin-bottom: 0;
 }
+
 .markdown strong {
   color: var(--accent-color);
 }
+
 .markdown pre {
   background: rgba(0, 0, 0, 0.3);
   padding: 0.5rem;
@@ -330,7 +357,123 @@ body {
   overflow-x: auto;
   margin: 0.5rem 0;
 }
+
 .markdown code {
   font-family: monospace;
   color: #e2e8f0;
+}
+
+/* Mobile adjustments */
+.mobile-menu-btn {
+  display: none;
+  background: transparent;
+  color: var(--accent-color);
+  border: 1px solid var(--accent-color);
+  border-radius: 8px;
+  font-size: 1.5rem;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mobile-menu-btn:hover {
+  background: rgba(102, 252, 241, 0.1);
+}
+
+@media (max-width: 767px) {
+  body {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  #root {
+    height: 100vh;
+  }
+
+  .app-container {
+    height: 100vh;
+    padding: 0.5rem;
+  }
+
+  .header h1 {
+    font-size: 1.8rem;
+  }
+
+  .subtitle {
+    display: none;
+    /* Hide subtitle on very small screens to save space */
+  }
+
+  .logged-in-text {
+    display: none;
+    /* Hide logged-in username to save space */
+  }
+
+  .logout-btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .mobile-menu-btn {
+    display: block;
+  }
+
+  .main-content {
+    position: relative;
+    overflow: hidden;
+    /* Chat container handles scroll */
+  }
+
+  .sidebar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: var(--primary-bg);
+    border: 1px solid var(--accent-color);
+    border-radius: 16px;
+    padding: 1rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    transform: translateY(-150%);
+    transition: transform 0.3s ease-in-out;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  .sidebar.open {
+    transform: translateY(0);
+  }
+
+  .chat-container {
+    flex: 1;
+    height: 100%;
+  }
+
+  .chat-bubble {
+    max-width: 95%;
+  }
+}
+
+/* Delete Button */
+.delete-btn {
+  background: transparent;
+  color: #e74c3c;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.delete-btn:hover {
+  opacity: 1;
+  background: rgba(231, 76, 60, 0.1);
+  transform: scale(1.1);
 }

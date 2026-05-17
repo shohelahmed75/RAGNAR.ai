@@ -23,13 +23,13 @@ const AuthPage: React.FC = () => {
         formData.append('username', username);
         formData.append('password', password);
         
-        const response = await axios.post('http://localhost:8000/login', formData, {
+        const response = await axios.post(`http://${window.location.hostname}:8000/login`, formData, {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         });
         login(response.data.access_token);
         navigate('/');
       } else {
-        await axios.post('http://localhost:8000/register', { username, password });
+        await axios.post(`http://${window.location.hostname}:8000/register`, { username, password });
         setIsLogin(true); // Switch to login after successful register
         setError('Registration successful! Please login.');
       }

@@ -16,27 +16,34 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [token, setToken] = useState<string | null>(localStorage.getItem('ragnar_token'));
-  const [user, setUser] = useState<User | null>(null);
+  const getInitialState = () => {
+    const savedToken = localStorage.getItem('ragnar_token');
+    if (savedToken) {
+      try {
+        const decoded: any = jwtDecode(savedToken);
+        if (decoded.exp * 1000 >= Date.now()) {
+          axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+          return { token: savedToken, user: { username: decoded.sub } };
+        } else {
+          localStorage.removeItem('ragnar_token');
+        }
+      } catch (e) {
+        localStorage.removeItem('ragnar_token');
+      }
+    }
+    return { token: null, user: null };
+  };
+
+  const initialState = getInitialState();
+  const [token, setToken] = useState<string | null>(initialState.token);
+  const [user, setUser] = useState<User | null>(initialState.user);
 
   useEffect(() => {
     if (token) {
-      try {
-        const decoded: any = jwtDecode(token);
-        // Check if token is expired
-        if (decoded.exp * 1000 < Date.now()) {
-          logout();
-        } else {
-          setUser({ username: decoded.sub });
-          // Set default axios header
-          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        }
-      } catch (e) {
-        logout();
-      }
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } else {
-      setUser(null);
       delete axios.defaults.headers.common['Authorization'];
+      setUser(null);
     }
   }, [token]);
 
