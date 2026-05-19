@@ -747,6 +747,7 @@ button {
   color: var(--ink);
   font-size: 64px;
   line-height: 0.96;
+  white-space: nowrap;
 }
 
 .auth-visual-copy p:not(.section-kicker) {
@@ -925,7 +926,8 @@ button {
   }
 
   .auth-visual h1 {
-    font-size: 48px;
+    font-size: 42px;
+    letter-spacing: 0.08em;
   }
 }
 
@@ -976,6 +978,15 @@ button {
     border-radius: 16px;
   }
 
+  .auth-visual-copy {
+    padding: 28px;
+  }
+
+  .auth-visual h1 {
+    font-size: 34px;
+    letter-spacing: 0.06em;
+  }
+
   .chat-bubble {
     max-width: 94%;
     font-size: 14px;
@@ -985,4 +996,15 @@ button {
     border-radius: 20px;
   }
 
+}
+
+@media (max-width: 390px) {
+  .auth-visual-copy {
+    padding: 24px;
+  }
+
+  .auth-visual h1 {
+    font-size: 30px;
+    letter-spacing: 0.04em;
+  }
 }
