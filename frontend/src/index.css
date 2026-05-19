@@ -67,8 +67,8 @@ button {
 }
 
 .header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  display: flex;
+  justify-content: space-between;
   align-items: center;
   gap: 18px;
 }

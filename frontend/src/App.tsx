@@ -188,12 +188,6 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <nav className="nav-pill" aria-label="Studio sections">
-          <span>Home</span>
-          <span>Files</span>
-          <span>Chat</span>
-          <span>Archive</span>
-        </nav>
 
         <div className="header-right">
           <span className="logged-in-text">Signed in as {user?.username}</span>
