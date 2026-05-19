@@ -58,7 +58,7 @@ docker-compose up -d
 Create a virtual environment and install the required Python dependencies:
 ```bash
 # Create and activate virtual environment
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate  # On macOS/Linux (use .\venv\Scripts\activate on Windows)
 
 # Install requirements
