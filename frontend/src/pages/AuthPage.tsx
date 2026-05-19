@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { FiArrowRight } from 'react-icons/fi';
 import '../index.css';
 
 const AuthPage: React.FC = () => {
@@ -39,26 +40,33 @@ const AuthPage: React.FC = () => {
   };
 
   return (
-    <div className="app-container" style={{ justifyContent: 'center', alignItems: 'center' }}>
-      <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', textAlign: 'center' }}>
-        <h2 style={{ color: 'var(--text-bright)', marginBottom: '1.5rem', fontSize: '2rem' }}>
-          {isLogin ? 'Login to RAGNAR' : 'Join RAGNAR'}
-        </h2>
-        
+    <main className="auth-page">
+      <section className="auth-visual" aria-label="RAGNAR introduction">
+        <div className="auth-visual-copy">
+          <h1>R A G N A R</h1>
+          <p>Upload PDFs, ask questions, and turn dense documents into clear answers.</p>
+        </div>
+      </section>
+
+      <section className="auth-card" aria-label={isLogin ? 'Login form' : 'Register form'}>
+        <div className="panel-heading auth-heading">
+          <p className="section-kicker">{isLogin ? 'L o g i n . 0 1' : 'J o i n . 0 1'}</p>
+          <h2>{isLogin ? 'Enter RAGNAR' : 'Create Account'}</h2>
+        </div>
+
         {error && (
-          <div className={`status-message ${error.includes('successful') ? 'status-success' : 'status-error'}`} style={{ marginBottom: '1rem' }}>
+          <div className={`status-message ${error.includes('successful') ? 'status-success' : 'status-error'}`}>
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <form onSubmit={handleSubmit} className="auth-form">
           <input
             type="text"
             placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="chat-input"
-            style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)' }}
+            className="auth-input"
             required
           />
           <input
@@ -66,26 +74,26 @@ const AuthPage: React.FC = () => {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="chat-input"
-            style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)' }}
+            className="auth-input"
             required
           />
-          <button type="submit" className="upload-btn" style={{ width: '100%' }}>
-            {isLogin ? 'Enter the Hall' : 'Forge Account'}
+          <button type="submit" className="auth-submit">
+            <span>{isLogin ? 'Continue' : 'Register'}</span>
+            <FiArrowRight />
           </button>
         </form>
 
-        <p style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-main)' }}>
+        <p className="auth-toggle">
           {isLogin ? "Don't have an account? " : "Already forged an account? "}
-          <span 
-            style={{ color: 'var(--accent-color)', cursor: 'pointer', fontWeight: 'bold' }} 
+          <button
+            type="button"
             onClick={() => { setIsLogin(!isLogin); setError(''); }}
           >
             {isLogin ? 'Register' : 'Login'}
-          </span>
+          </button>
         </p>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 };
 

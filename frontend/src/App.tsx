@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
+import { FiFileText, FiLogOut, FiMenu, FiSend, FiTrash2, FiUploadCloud, FiX } from 'react-icons/fi';
 import './index.css';
 import { useAuth } from './context/AuthContext';
 import AuthPage from './pages/AuthPage';
@@ -18,17 +19,17 @@ interface UserFile {
 
 const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
-  
+
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: `Hail, ${user?.username}! I am RAGNAR. Upload your scrolls or select an existing one to begin.` }
+    { role: 'assistant', content: `Welcome, ${user?.username}. I am RAGNAR, your document intelligence studio. Upload a PDF or select an existing file to begin.` }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState<{type: 'success'|'error'|'info', text: string} | null>(null);
-  
+  const [uploadStatus, setUploadStatus] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
+
   const [userFiles, setUserFiles] = useState<UserFile[]>([]);
   const [activeCollection, setActiveCollection] = useState<string>('');
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -44,12 +45,12 @@ const Dashboard: React.FC = () => {
   };
 
   const handleDelete = async (fileId: number, collectionName: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // prevent clicking the list item
+    e.stopPropagation();
     try {
       await axios.delete(`http://${window.location.hostname}:8000/files/${fileId}`);
       if (activeCollection === collectionName) {
         setActiveCollection('');
-        setMessages([{ role: 'assistant', content: 'Context cleared. Please select another scroll.' }]);
+        setMessages([{ role: 'assistant', content: 'Context cleared. Please select another document.' }]);
       }
       fetchFiles();
     } catch (error) {
@@ -77,8 +78,8 @@ const Dashboard: React.FC = () => {
     const formData = new FormData();
     formData.append('file', file);
 
-    setUploadStatus({ type: 'info', text: 'Forging knowledge from your scroll... Please wait.' });
-    
+    setUploadStatus({ type: 'info', text: 'Indexing your document. Please wait.' });
+
     try {
       const response = await axios.post(`http://${window.location.hostname}:8000/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -86,7 +87,7 @@ const Dashboard: React.FC = () => {
       if (response.data.error) {
         setUploadStatus({ type: 'error', text: response.data.error });
       } else {
-        setUploadStatus({ type: 'success', text: `Knowledge absorbed! (${response.data.filename})` });
+        setUploadStatus({ type: 'success', text: `Document indexed: ${response.data.filename}` });
         if (response.data.collection_name) {
           setActiveCollection(response.data.collection_name);
         }
@@ -118,7 +119,7 @@ const Dashboard: React.FC = () => {
   const sendMessage = async () => {
     if (!input.trim()) return;
     if (!activeCollection) {
-      setMessages([...messages, { role: 'assistant', content: 'You must select or upload a scroll first before asking questions.' }]);
+      setMessages([...messages, { role: 'assistant', content: 'Select or upload a document before asking questions.' }]);
       return;
     }
 
@@ -130,13 +131,13 @@ const Dashboard: React.FC = () => {
 
     try {
       const history = newMessages.slice(1, -1).map(m => ({ role: m.role, content: m.content }));
-      
+
       const payload: any = {
         query: userMessage.content,
         history: history,
         collection_name: activeCollection
       };
-      
+
       const response = await axios.post(`http://${window.location.hostname}:8000/chat`, payload);
 
       if (response.data.error) {
@@ -146,16 +147,16 @@ const Dashboard: React.FC = () => {
       }
     } catch (error: any) {
       if (error.response?.status === 403) {
-         setMessages([...newMessages, { role: 'assistant', content: 'You are not authorized to query this collection.' }]);
+        setMessages([...newMessages, { role: 'assistant', content: 'You are not authorized to query this collection.' }]);
       } else {
-         setMessages([...newMessages, { role: 'assistant', content: 'Alas! The connection to the gods was lost.' }]);
+        setMessages([...newMessages, { role: 'assistant', content: 'The connection dropped. Please try again.' }]);
       }
     } finally {
       setIsTyping(false);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       sendMessage();
     }
@@ -168,99 +169,136 @@ const Dashboard: React.FC = () => {
     return <div className="markdown" dangerouslySetInnerHTML={{ __html: html }} />;
   };
 
+  const activeFile = userFiles.find(f => f.collection_name === activeCollection);
+
   return (
     <div className="app-container">
-      <header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <button className="mobile-menu-btn" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-            ☰
+      <header className="header">
+        <div className="brand-cluster">
+          <button
+            className="icon-btn mobile-menu-btn"
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            aria-label={isSidebarOpen ? 'Close document library' : 'Open document library'}
+          >
+            {isSidebarOpen ? <FiX /> : <FiMenu />}
           </button>
-          <div style={{ textAlign: 'left' }}>
+          <div className="brand-copy">
             <h1>RAGNAR</h1>
             <p className="subtitle">Document Intelligence Engine</p>
           </div>
         </div>
+
+        <nav className="nav-pill" aria-label="Studio sections">
+          <span>Home</span>
+          <span>Files</span>
+          <span>Chat</span>
+          <span>Archive</span>
+        </nav>
+
         <div className="header-right">
-          <span className="logged-in-text" style={{ marginRight: '1rem', color: 'var(--accent-color)' }}>Logged in as {user?.username}</span>
-          <button onClick={logout} className="upload-btn logout-btn" style={{ padding: '0.3rem 0.8rem', marginTop: 0 }}>Logout</button>
+          <span className="logged-in-text">Signed in as {user?.username}</span>
+          <button onClick={logout} className="contact-btn logout-btn">
+            <span>Logout</span>
+            <FiLogOut />
+          </button>
         </div>
       </header>
 
+      <section className="studio-hero" aria-label="RAGNAR overview">
+        <div>
+          <h2>R A G N A R</h2>
+        </div>
+        <p>
+          A focused workspace for asking precise questions against your PDFs, with files,
+          context, and conversation kept close enough to scan in one pass.
+        </p>
+        <div className="hero-stats" aria-label="Workspace status">
+          <span>{userFiles.length.toString().padStart(2, '0')}</span>
+          <small>Indexed files</small>
+        </div>
+      </section>
+
       <main className="main-content">
         <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-          <div className="glass-panel" style={{ flex: '0 0 auto' }}>
-            <h2 style={{ marginBottom: '1rem', fontSize: '1.2rem', color: 'var(--text-bright)' }}>
-              Upload New Scroll
-            </h2>
-            <div 
+          <section className="panel upload-panel">
+            <div className="panel-heading">
+              <p className="section-kicker">U p l o a d . 0 1</p>
+              <h2>New Document</h2>
+            </div>
+            <div
               className="upload-section"
               onDragOver={handleDragOver}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              style={{ padding: '1.5rem 1rem' }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  fileInputRef.current?.click();
+                }
+              }}
             >
-              <p>Drag & Drop PDF or click</p>
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileUpload} 
-                className="file-input" 
+              <FiUploadCloud className="upload-icon" />
+              <p>Drop a PDF or click to browse</p>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                className="file-input"
                 accept="application/pdf"
               />
             </div>
             {uploadStatus && (
-              <div className={`status-message status-${uploadStatus.type === 'info' ? 'success' : uploadStatus.type}`} style={{ opacity: uploadStatus.type === 'info' ? 0.8 : 1 }}>
+              <div className={`status-message status-${uploadStatus.type === 'info' ? 'success' : uploadStatus.type}`}>
                 {uploadStatus.text}
               </div>
             )}
-          </div>
+          </section>
 
-          <div className="glass-panel" style={{ flex: 1, overflowY: 'auto' }}>
-            <h2 style={{ marginBottom: '1rem', fontSize: '1.2rem', color: 'var(--text-bright)' }}>
-              Your Scrolls
-            </h2>
+          <section className="panel library-panel">
+            <div className="panel-heading">
+              <p className="section-kicker">L i b r a r y . 0 2</p>
+              <h2>Your Files</h2>
+            </div>
             {userFiles.length === 0 ? (
-              <p style={{ color: 'var(--accent-dim)', fontSize: '0.9rem' }}>No scrolls uploaded yet.</p>
+              <p className="empty-state">No documents uploaded yet.</p>
             ) : (
-              <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <ul className="file-list">
                 {userFiles.map(f => (
-                  <li 
-                    key={f.id} 
-                    onClick={() => setActiveCollection(f.collection_name)}
-                    style={{
-                      padding: '0.8rem',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      background: activeCollection === f.collection_name ? 'var(--chat-user-bg)' : 'rgba(0,0,0,0.2)',
-                      border: `1px solid ${activeCollection === f.collection_name ? 'var(--accent-color)' : 'var(--glass-border)'}`,
-                      transition: 'all 0.2s',
-                      wordBreak: 'break-all',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: '0.5rem'
-                    }}
+                  <li
+                    key={f.id}
+                    className={`file-item ${activeCollection === f.collection_name ? 'active' : ''}`}
                   >
-                    <span>{f.filename}</span>
-                    <button 
-                      className="delete-btn" 
+                    <button className="file-select-btn" onClick={() => setActiveCollection(f.collection_name)}>
+                      <FiFileText />
+                      <span>{f.filename}</span>
+                    </button>
+                    <button
+                      className="delete-btn"
                       onClick={(e) => handleDelete(f.id, f.collection_name, e)}
-                      title="Delete Scroll"
+                      title="Delete document"
+                      aria-label={`Delete ${f.filename}`}
                     >
-                      ✕
+                      <FiTrash2 />
                     </button>
                   </li>
                 ))}
               </ul>
             )}
-          </div>
+          </section>
         </aside>
 
-        <section className="chat-container glass-panel">
-          <div style={{ padding: '0.5rem', marginBottom: '1rem', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', textAlign: 'center', color: 'var(--accent-dim)', fontSize: '0.9rem' }}>
-            {activeCollection ? `Active Context: ${userFiles.find(f => f.collection_name === activeCollection)?.filename || activeCollection}` : 'Select a scroll to begin asking questions.'}
+        <section className="chat-container panel">
+          <div className="chat-header">
+            <div>
+              <p className="section-kicker">A s k . 0 3</p>
+              <h2>Conversation</h2>
+            </div>
+            <div className="context-strip">
+              {activeCollection ? `Active: ${activeFile?.filename || activeCollection}` : 'Select a document to begin'}
+            </div>
           </div>
-          
+
           <div className="chat-history">
             {messages.map((msg, idx) => (
               <div key={idx} className={`chat-bubble ${msg.role === 'user' ? 'chat-user' : 'chat-assistant'}`}>
@@ -278,21 +316,22 @@ const Dashboard: React.FC = () => {
           </div>
 
           <div className="input-area">
-            <input 
-              type="text" 
-              className="chat-input" 
-              placeholder={activeCollection ? "Ask RAGNAR a question..." : "Select a scroll first..."}
+            <input
+              type="text"
+              className="chat-input"
+              placeholder={activeCollection ? 'Ask RAGNAR a question...' : 'Select a document first...'}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
               disabled={isTyping || !activeCollection}
             />
-            <button 
-              className="send-btn" 
+            <button
+              className="send-btn"
               onClick={sendMessage}
               disabled={!input.trim() || isTyping || !activeCollection}
+              aria-label="Send message"
             >
-              <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" height="1.2em" width="1.2em" xmlns="http://www.w3.org/2000/svg"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+              <FiSend />
             </button>
           </div>
         </section>
@@ -310,13 +349,13 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<AuthPage />} />
-      <Route 
-        path="/" 
+      <Route
+        path="/"
         element={
           <PrivateRoute>
             <Dashboard />
           </PrivateRoute>
-        } 
+        }
       />
     </Routes>
   );

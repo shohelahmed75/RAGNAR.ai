@@ -49,6 +49,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = (newToken: string) => {
     localStorage.setItem('ragnar_token', newToken);
+    const decoded: any = jwtDecode(newToken);
+    setUser({ username: decoded.sub });
     setToken(newToken);
   };
 
