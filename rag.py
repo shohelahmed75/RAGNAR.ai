@@ -36,7 +36,7 @@ def process_pdf(file_path: str, original_file_name: str = None, user_id: int = 0
             documents = chunks,
             embedding = embedding_model,
             url = "http://localhost:6333",
-            collection_name = collection_name,
+            collection_name = f"{collection_name}-G",
             force_recreate=True
         )
 
@@ -51,7 +51,7 @@ def process_pdf(file_path: str, original_file_name: str = None, user_id: int = 0
             documents = chunks,
             embedding = embedding_model,
             url = "http://localhost:6333",
-            collection_name = collection_name,
+            collection_name = f"{collection_name}-O",
             force_recreate=True
         )
 

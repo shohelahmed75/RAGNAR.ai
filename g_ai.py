@@ -15,7 +15,7 @@ def get_vector_db(collection_name: str):
     return QdrantVectorStore.from_existing_collection(
         embedding = embedding_model,
         url = "http://localhost:6333",
-        collection_name = collection_name
+        collection_name = f"{collection_name}-G"
     )
 
 def g_ragnar():    
@@ -73,7 +73,7 @@ def g_ragnar_chat(query: str, history: list, collection_name: str = "RAGNAR_GOOG
     )
 
     response = ai.models.generate_content(
-        model = "gemini-3-flash-preview",
+        model = "gemini-3.1-flash-lite",
         contents = formatted_history,
         config = types.GenerateContentConfig(
             system_instruction = SYSTEM_PROMPT

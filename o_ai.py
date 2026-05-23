@@ -14,7 +14,7 @@ def get_vector_db(collection_name: str):
     return QdrantVectorStore.from_existing_collection(
         embedding = embedding_model,
         url = "http://localhost:6333",
-        collection_name = collection_name
+        collection_name = f"{collection_name}-O"
     )
 
 def o_ragnar():
