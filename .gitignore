@@ -174,3 +174,38 @@ pnpm-debug.log*
 *.sqlite
 *.sqlite3
 ragnar.db
+
+# Security: secrets and credentials
+# Ignore dotenv files and local env overrides, keep example if present
+.env*
+!.env.example
+
+# Private keys and certificates
+*.pem
+*.key
+*.crt
+*.asc
+*.secret
+
+# Cloud / service account credentials
+serviceAccount*.json
+*-service-account.json
+credentials.json
+google-credentials.json
+firebase-adminsdk*.json
+
+# Firebase local state and logs
+.firebase/
+firebase-debug.log
+functions/.runtimeconfig.json
+.firebaserc.local
+
+# Mobile / platform Firebase config files
+google-services.json
+GoogleService-Info.plist
+
+# Firebase emulator and cache
+.cache/firebase
+
+# Ignore local IDE Firebase config
+firebase-debug.*
