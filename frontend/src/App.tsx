@@ -198,19 +198,6 @@ const Dashboard: React.FC = () => {
         </div>
       </header>
 
-      <section className="studio-hero" aria-label="RAGNAR overview">
-        <div>
-          <h2>R A G N A R</h2>
-        </div>
-        <p>
-          A focused workspace for asking precise questions against your PDFs, with files,
-          context, and conversation kept close enough to scan in one pass.
-        </p>
-        <div className="hero-stats" aria-label="Workspace status">
-          <span>{userFiles.length.toString().padStart(2, '0')}</span>
-          <small>Indexed files</small>
-        </div>
-      </section>
 
       <main className="main-content">
         <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
